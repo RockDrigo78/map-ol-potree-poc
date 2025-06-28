@@ -43,19 +43,40 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         onChange={handleModeChange}
         size="small"
       >
-        <ToggleButton value="Point">
+        <ToggleButton
+          value="Point"
+          sx={{
+            width: 32,
+            height: 32,
+            color: "text.primary",
+          }}
+        >
           <Tooltip title="Draw Point">
-            <PointIcon />
+            <PointIcon fontSize="small" />
           </Tooltip>
         </ToggleButton>
-        <ToggleButton value="LineString">
+        <ToggleButton
+          value="LineString"
+          sx={{
+            width: 32,
+            height: 32,
+            color: "text.primary",
+          }}
+        >
           <Tooltip title="Draw Line">
-            <LineIcon />
+            <LineIcon fontSize="small" />
           </Tooltip>
         </ToggleButton>
-        <ToggleButton value="Polygon">
+        <ToggleButton
+          value="Polygon"
+          sx={{
+            width: 32,
+            height: 32,
+            color: "text.primary",
+          }}
+        >
           <Tooltip title="Draw Polygon">
-            <PolygonIcon />
+            <PolygonIcon fontSize="small" />
           </Tooltip>
         </ToggleButton>
       </ToggleButtonGroup>

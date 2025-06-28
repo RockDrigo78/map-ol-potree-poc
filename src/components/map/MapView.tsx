@@ -13,17 +13,18 @@ import LineString from "ol/geom/LineString";
 import Polygon from "ol/geom/Polygon";
 import Icon from "ol/style/Icon";
 import Style from "ol/style/Style";
-import Attribution from "ol/control/Attribution";
 import { useMapStore } from "../../store/mapStore";
-import type { MapFeature, PointCloud, FeatureType } from "../../types/map";
+import type { PointCloud, FeatureType } from "../../types/map";
 import MapToolbar from "./MapToolbar";
 import { Stroke, Fill } from "ol/style";
 import Circle from "ol/style/Circle";
-import Zoom from "ol/control/Zoom";
-import Rotate from "ol/control/Rotate";
-import { IconButton, Box, Tooltip } from "@mui/material";
-import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
-import "./MapView.css";
+import { Box, Tooltip, ToggleButtonGroup, ToggleButton } from "@mui/material";
+import {
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  RotateLeft as RotateLeftIcon,
+  RotateRight as RotateRightIcon,
+} from "@mui/icons-material";
 
 interface MapViewProps {
   onPointCloudClick: (cloud: PointCloud) => void;
@@ -48,6 +49,7 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
   }>({ x: 0, y: 0 });
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [mapRotation, setMapRotation] = useState(0);
 
   // Calculate measurements
   const calculateMeasurements = (
@@ -162,20 +164,12 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
     });
     const vector = new VectorLayer({ source: vectorSourceRef.current });
 
-    // Create custom rotate control (compass)
-    const rotateControl = new Rotate({
-      className: "custom-rotate-control",
-      label: "⇡",
-    });
-
     const map = new Map({
       target: mapRef.current!,
+      controls: [],
       layers: [raster, vector],
       view: new View({ center: fromLonLat([0, 0]), zoom: 2 }),
     });
-
-    // Add controls after map creation
-    map.addControl(rotateControl);
 
     console.log("Map controls:", map.getControls().getArray());
 
@@ -493,6 +487,29 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
     }
   };
 
+  const handleResetRotation = () => {
+    if (mapRef2.current) {
+      const view = mapRef2.current.getView();
+      view.animate({ rotation: 0, duration: 500 });
+    }
+  };
+
+  const handleRotateLeft = () => {
+    if (mapRef2.current) {
+      const view = mapRef2.current.getView();
+      const currentRotation = view.getRotation() || 0;
+      view.animate({ rotation: currentRotation - Math.PI / 4, duration: 300 });
+    }
+  };
+
+  const handleRotateRight = () => {
+    if (mapRef2.current) {
+      const view = mapRef2.current.getView();
+      const currentRotation = view.getRotation() || 0;
+      view.animate({ rotation: currentRotation + Math.PI / 4, duration: 300 });
+    }
+  };
+
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
@@ -502,53 +519,114 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
       />
 
       {/* Custom Zoom Controls */}
-      <Box
+      <ToggleButtonGroup
+        orientation="vertical"
         sx={{
           position: "absolute",
           top: "50%",
-          right: 16,
+          right: 8,
           transform: "translateY(-50%)",
           zIndex: 1000,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          bgcolor: "rgba(255, 255, 255, 0.9)",
+          bgcolor: "background.paper",
           borderRadius: 1,
-          padding: 0.5,
-          boxShadow: 2,
+          boxShadow: 3,
+          p: 1,
+          display: "flex",
         }}
       >
-        <IconButton
+        <ToggleButton
+          sx={{
+            width: 32,
+            height: 32,
+            color: "text.primary",
+          }}
+          value="point"
           onClick={handleZoomIn}
           size="small"
-          sx={{
-            width: 36,
-            height: 36,
-            bgcolor: "white",
-            border: "1px solid #ccc",
-            "&:hover": {
-              bgcolor: "#f0f0f0",
-            },
-          }}
         >
           <AddIcon fontSize="small" />
-        </IconButton>
-        <IconButton
+        </ToggleButton>
+        <ToggleButton
+          sx={{
+            width: 32,
+            height: 32,
+            color: "text.primary",
+          }}
+          value="point"
           onClick={handleZoomOut}
           size="small"
-          sx={{
-            width: 36,
-            height: 36,
-            bgcolor: "white",
-            border: "1px solid #ccc",
-            "&:hover": {
-              bgcolor: "#f0f0f0",
-            },
-          }}
         >
           <RemoveIcon fontSize="small" />
-        </IconButton>
-      </Box>
+        </ToggleButton>
+      </ToggleButtonGroup>
+
+      {/* Rotation Control Toolbar */}
+      <ToggleButtonGroup
+        sx={{
+          position: "absolute",
+          bottom: 8,
+          left: 8,
+          zIndex: 1000,
+          bgcolor: "background.paper",
+          borderRadius: 1,
+          boxShadow: 3,
+          p: 1,
+          display: "flex",
+        }}
+      >
+        <Tooltip title="Rotate Left">
+          <ToggleButton
+            value="point"
+            onClick={handleRotateLeft}
+            size="small"
+            sx={{
+              width: 32,
+              height: 32,
+              color: "text.primary",
+            }}
+          >
+            <RotateLeftIcon fontSize="small" />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title="Reset Rotation">
+          <ToggleButton
+            value="point"
+            onClick={handleResetRotation}
+            size="small"
+            sx={{
+              width: 32,
+              height: 32,
+              color: "text.primary",
+            }}
+          >
+            <Box
+              sx={{
+                width: 0,
+                height: 0,
+                borderLeft: "4px solid transparent",
+                borderRight: "4px solid transparent",
+                borderBottom: "12px solid currentColor",
+                transform: `rotate(${-mapRotation}rad)`,
+                transition: "transform 0.3s ease",
+              }}
+            />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title="Rotate Right">
+          <ToggleButton
+            value="point"
+            onClick={handleRotateRight}
+            size="small"
+            sx={{
+              width: 32,
+              height: 32,
+              color: "text.primary",
+            }}
+          >
+            <RotateRightIcon fontSize="small" />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
 
       {/* Tooltip */}
       {showTooltip && (

@@ -26,7 +26,7 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { useMapStore } from "../../store/mapStore";
-import type { MapFeature, PointCloud } from "../../types/map";
+import type { PointCloud } from "../../types/map";
 
 interface FeatureDrawerProps {
   open: boolean;

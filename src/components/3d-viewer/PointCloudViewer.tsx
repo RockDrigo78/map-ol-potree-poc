@@ -8,7 +8,6 @@ import {
   Alert,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { Potree } from "potree-core";
 import type { PointCloud } from "../../types/map";
 
 interface PointCloudViewerProps {
