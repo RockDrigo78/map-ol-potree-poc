@@ -76,6 +76,7 @@ function App() {
           <IconButton
             color="inherit"
             edge="start"
+            sx={{ mr: "10px" }}
             onClick={() => setDrawerOpen(true)}
           >
             <MenuIcon />
