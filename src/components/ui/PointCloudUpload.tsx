@@ -45,7 +45,7 @@ const PointCloudUpload: React.FC<PointCloudUploadProps> = ({
     if (!file) {
       newErrors.file = "Please select a file";
     } else {
-      const validTypes = [".las", ".laz", ".ply", ".xyz", ".pts"];
+      const validTypes = [".las", ".laz", ".ply", ".xyz", ".pts", ".rwcx"];
       const fileExtension = file.name
         .toLowerCase()
         .substring(file.name.lastIndexOf("."));

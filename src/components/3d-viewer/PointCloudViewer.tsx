@@ -163,7 +163,7 @@ const PointCloudViewer: React.FC<PointCloudViewerProps> = ({
         sx={{
           position: "absolute",
           top: 8,
-          right: 8,
+          right: 16,
           zIndex: 1,
           bgcolor: "rgba(0,0,0,0.5)",
           color: "white",

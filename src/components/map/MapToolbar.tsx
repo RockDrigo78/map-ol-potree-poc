@@ -1,29 +1,20 @@
 import React from "react";
-import {
-  Box,
-  ToggleButtonGroup,
-  ToggleButton,
-  Button,
-  Tooltip,
-} from "@mui/material";
+import { Box, ToggleButtonGroup, ToggleButton, Tooltip } from "@mui/material";
 import {
   Room as PointIcon,
   ShowChart as LineIcon,
   CropSquare as PolygonIcon,
-  Clear as ClearIcon,
 } from "@mui/icons-material";
 import type { FeatureType } from "../../types/map";
 
 interface MapToolbarProps {
   drawingMode: FeatureType | null;
   onDrawingModeChange: (mode: FeatureType | null) => void;
-  onClear: () => void;
 }
 
 const MapToolbar: React.FC<MapToolbarProps> = ({
   drawingMode,
   onDrawingModeChange,
-  onClear,
 }) => {
   const handleModeChange = (
     _: React.MouseEvent<HTMLElement>,
@@ -36,8 +27,9 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
     <Box
       sx={{
         position: "absolute",
-        top: 16,
-        right: 16,
+        bottom: 8,
+        right: "50%",
+        transform: "translateX(50%)",
         zIndex: 1000,
         bgcolor: "background.paper",
         borderRadius: 1,
@@ -67,15 +59,6 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
           </Tooltip>
         </ToggleButton>
       </ToggleButtonGroup>
-
-      <Button
-        size="small"
-        onClick={onClear}
-        sx={{ ml: 1 }}
-        startIcon={<ClearIcon />}
-      >
-        Clear
-      </Button>
     </Box>
   );
 };

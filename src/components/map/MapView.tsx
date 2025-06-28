@@ -21,7 +21,7 @@ import { Stroke, Fill } from "ol/style";
 import Circle from "ol/style/Circle";
 import Zoom from "ol/control/Zoom";
 import Rotate from "ol/control/Rotate";
-import { IconButton, Box } from "@mui/material";
+import { IconButton, Box, Tooltip } from "@mui/material";
 import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
 import "./MapView.css";
 
@@ -41,6 +41,13 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(
     null
   );
+  const [tooltipContent, setTooltipContent] = useState<string>("");
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+  const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   // Calculate measurements
   const calculateMeasurements = (
@@ -81,6 +88,31 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
     }
 
     return {};
+  };
+
+  // Format coordinates for tooltip display
+  const formatCoordinates = (coordinates: number[][]): string => {
+    if (coordinates.length === 0) return "";
+
+    if (coordinates.length === 1) {
+      const [lon, lat] = coordinates[0];
+      return `[${lon.toFixed(6)}, ${lat.toFixed(6)}]`;
+    }
+
+    if (coordinates.length <= 3) {
+      return coordinates
+        .map(([lon, lat]) => `[${lon.toFixed(6)}, ${lat.toFixed(6)}]`)
+        .join(", ");
+    }
+
+    // For features with many coordinates, show first and last
+    const first = coordinates[0];
+    const last = coordinates[coordinates.length - 1];
+    return `[${first[0].toFixed(6)}, ${first[1].toFixed(
+      6
+    )}] ... [${last[0].toFixed(6)}, ${last[1].toFixed(6)}] (${
+      coordinates.length
+    } points)`;
   };
 
   // Focus on a feature
@@ -314,12 +346,33 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
             src:
               "data:image/svg+xml;base64," +
               btoa(`
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4caf50">
-              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9c27b0">
+              <defs>
+                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000" flood-opacity="0.3"/>
+                </filter>
+              </defs>
+              <g filter="url(#shadow)">
+                <!-- Main point cloud representation -->
+                <circle cx="12" cy="12" r="4" fill="#9c27b0" stroke="#fff" stroke-width="1"/>
+                <circle cx="8" cy="8" r="2" fill="#ba68c8" opacity="0.8"/>
+                <circle cx="16" cy="16" r="2" fill="#ba68c8" opacity="0.8"/>
+                <circle cx="16" cy="8" r="1.5" fill="#ce93d8" opacity="0.6"/>
+                <circle cx="8" cy="16" r="1.5" fill="#ce93d8" opacity="0.6"/>
+                <circle cx="12" cy="6" r="1" fill="#e1bee7" opacity="0.7"/>
+                <circle cx="6" cy="12" r="1" fill="#e1bee7" opacity="0.7"/>
+                <circle cx="18" cy="12" r="1" fill="#e1bee7" opacity="0.7"/>
+                <circle cx="12" cy="18" r="1" fill="#e1bee7" opacity="0.7"/>
+                <!-- 3D indicator -->
+                <path d="M12 4 L14 6 L10 6 Z" fill="#7b1fa2"/>
+                <path d="M12 20 L14 18 L10 18 Z" fill="#7b1fa2"/>
+                <path d="M4 12 L6 14 L6 10 Z" fill="#7b1fa2"/>
+                <path d="M20 12 L18 14 L18 10 Z" fill="#7b1fa2"/>
+              </g>
             </svg>
           `),
-            scale: 1.5,
-            anchor: [0.5, 1],
+            scale: 1.3,
+            anchor: [0.5, 0.5],
           }),
         })
       );
@@ -337,13 +390,83 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
       mapRef2.current!.forEachFeatureAtPixel(evt.pixel, (feature) => {
         const id = feature.getId();
         const cloud = pointClouds.find((c) => c.id === id);
-        if (cloud) onPointCloudClick(cloud);
+        if (cloud) {
+          // Focus on the point cloud location
+          const pointGeom = new Point(fromLonLat(cloud.coordinate));
+          const extent = pointGeom.getExtent();
+          mapRef2.current!.getView().fit(extent, {
+            duration: 1000,
+            padding: [50, 50, 50, 50],
+            maxZoom: 18,
+          });
+
+          // Call the original callback
+          onPointCloudClick(cloud);
+        }
       });
     };
 
     mapRef2.current.on("singleclick", handleClick);
     return () => mapRef2.current?.un("singleclick", handleClick);
   }, [pointClouds, onPointCloudClick]);
+
+  // Pointer move handler for tooltips
+  useEffect(() => {
+    if (!mapRef2.current) return;
+
+    const handlePointerMove = (evt: any) => {
+      const pixel = evt.pixel;
+      const coordinate = evt.coordinate;
+
+      mapRef2.current!.forEachFeatureAtPixel(pixel, (feature) => {
+        const id = feature.getId();
+
+        // Check if it's a feature (not a point cloud)
+        const mapFeature = features.find((f) => f.id === id);
+        if (mapFeature) {
+          const coordsText = formatCoordinates(mapFeature.coordinates);
+          const measurementText = mapFeature.measurements
+            ? mapFeature.measurements.length
+              ? `${mapFeature.measurements.length}m`
+              : mapFeature.measurements.area
+              ? `${mapFeature.measurements.area}m²`
+              : ""
+            : "";
+
+          const tooltipText = `${
+            mapFeature.name || mapFeature.type
+          }\n${coordsText}${measurementText ? `\n${measurementText}` : ""}`;
+
+          setTooltipContent(tooltipText);
+          setTooltipPosition({ x: pixel[0], y: pixel[1] });
+          setShowTooltip(true);
+          return;
+        }
+
+        // Check if it's a point cloud
+        const cloud = pointClouds.find((c) => c.id === id);
+        if (cloud) {
+          const coordsText = `[${cloud.coordinate[0].toFixed(
+            6
+          )}, ${cloud.coordinate[1].toFixed(6)}]`;
+          const tooltipText = `${cloud.name}\n${coordsText}`;
+
+          setTooltipContent(tooltipText);
+          setTooltipPosition({ x: pixel[0], y: pixel[1] });
+          setShowTooltip(true);
+          return;
+        }
+      });
+
+      // Hide tooltip if no feature is found
+      if (!mapRef2.current!.hasFeatureAtPixel(pixel)) {
+        setShowTooltip(false);
+      }
+    };
+
+    mapRef2.current.on("pointermove", handlePointerMove);
+    return () => mapRef2.current?.un("pointermove", handlePointerMove);
+  }, [features, pointClouds]);
 
   const handleClear = () => {
     vectorSourceRef.current.clear();
@@ -376,7 +499,6 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
       <MapToolbar
         drawingMode={drawingMode}
         onDrawingModeChange={setDrawingMode}
-        onClear={handleClear}
       />
 
       {/* Custom Zoom Controls */}
@@ -427,6 +549,30 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
           <RemoveIcon fontSize="small" />
         </IconButton>
       </Box>
+
+      {/* Tooltip */}
+      {showTooltip && (
+        <Box
+          ref={tooltipRef}
+          sx={{
+            position: "absolute",
+            left: tooltipPosition.x + 10,
+            top: tooltipPosition.y - 10,
+            zIndex: 2000,
+            bgcolor: "rgba(0, 0, 0, 0.8)",
+            color: "white",
+            padding: 1,
+            borderRadius: 1,
+            fontSize: "12px",
+            whiteSpace: "pre-line",
+            maxWidth: 300,
+            boxShadow: 2,
+            pointerEvents: "none",
+          }}
+        >
+          {tooltipContent}
+        </Box>
+      )}
     </div>
   );
 };
