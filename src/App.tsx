@@ -19,8 +19,14 @@ import type { PointCloud } from "./types/map";
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const { selectedPointCloudId, pointClouds, addPointCloud, selectPointCloud } =
-    useMapStore();
+  const {
+    selectedPointCloudId,
+    pointClouds,
+    addPointCloud,
+    selectPointCloud,
+    visibleFeatureIds,
+    setVisibleFeatureIds,
+  } = useMapStore();
   const selectedCloud =
     pointClouds.find((c) => c.id === selectedPointCloudId) || null;
   const focusOnFeatureRef = useRef<((featureId: string) => void) | null>(null);
@@ -98,6 +104,7 @@ function App() {
           <MapView
             onPointCloudClick={handlePointCloudClick}
             onMapReady={handleMapReady}
+            visibleFeatureIds={visibleFeatureIds}
           />
         </Box>
         {selectedCloud && (
@@ -125,6 +132,8 @@ function App() {
         onClose={() => setDrawerOpen(false)}
         onPointCloudSelect={handlePointCloudSelect}
         onFeatureClick={handleFeatureClick}
+        visibleFeatureIds={visibleFeatureIds}
+        onVisibleFeaturesChange={setVisibleFeatureIds}
       />
       <PointCloudUpload
         open={uploadOpen}

@@ -29,9 +29,14 @@ import {
 interface MapViewProps {
   onPointCloudClick: (cloud: PointCloud) => void;
   onMapReady?: (focusOnFeature: (featureId: string) => void) => void;
+  visibleFeatureIds?: string[];
 }
 
-const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
+const MapView: React.FC<MapViewProps> = ({
+  onPointCloudClick,
+  onMapReady,
+  visibleFeatureIds,
+}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const { features, pointClouds, addFeature, removeFeature, loadFromStorage } =
     useMapStore();
@@ -270,8 +275,11 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
     // Clear existing features
     vectorSourceRef.current.clear();
 
-    // Add saved features from localStorage
-    features.forEach((feature) => {
+    // Add saved features from localStorage, filtered by visibleFeatureIds if provided
+    (visibleFeatureIds
+      ? features.filter((f) => visibleFeatureIds.includes(f.id))
+      : features
+    ).forEach((feature) => {
       console.log("Rendering feature:", feature);
       let geom;
       if (feature.type === "Point") {
@@ -374,7 +382,7 @@ const MapView: React.FC<MapViewProps> = ({ onPointCloudClick, onMapReady }) => {
       iconFeature.setId(cloud.id);
       vectorSourceRef.current.addFeature(iconFeature);
     });
-  }, [features, pointClouds]);
+  }, [features, pointClouds, visibleFeatureIds]);
 
   // Click handler for point cloud icons
   useEffect(() => {

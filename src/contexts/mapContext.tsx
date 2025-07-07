@@ -1,10 +1,19 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type PropsWithChildren,
+  useEffect,
+} from "react";
 import type { MapFeature, PointCloud } from "../types/map";
 
 interface MapState {
   features: MapFeature[];
   pointClouds: PointCloud[];
   selectedPointCloudId: string | null;
+  visibleFeatureIds: string[];
+  setVisibleFeatureIds: (ids: string[]) => void;
   addFeature: (feature: MapFeature) => void;
   removeFeature: (id: string) => void;
   addPointCloud: (cloud: PointCloud) => void;
@@ -18,7 +27,7 @@ const CLOUDS_KEY = "map_point_clouds";
 
 const MapContext = createContext<MapState | undefined>(undefined);
 
-type MapProviderProps = React.PropsWithChildren<{}>;
+type MapProviderProps = PropsWithChildren<{}>;
 export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   const [features, setFeatures] = useState<MapFeature[]>(() => {
     return JSON.parse(localStorage.getItem(FEATURES_KEY) || "[]");
@@ -29,6 +38,16 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   const [selectedPointCloudId, setSelectedPointCloudId] = useState<
     string | null
   >(null);
+  const [visibleFeatureIds, setVisibleFeatureIds] = useState<string[]>(() => {
+    const stored = JSON.parse(localStorage.getItem(FEATURES_KEY) || "[]");
+    return stored.map((f: MapFeature) => f.id);
+  });
+
+  useEffect(() => {
+    setVisibleFeatureIds((prev) =>
+      prev.filter((id) => features.some((f) => f.id === id))
+    );
+  }, [features]);
 
   const addFeature = useCallback((feature: MapFeature) => {
     setFeatures((prev) => {
@@ -36,6 +55,9 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
       localStorage.setItem(FEATURES_KEY, JSON.stringify(updated));
       return updated;
     });
+    setVisibleFeatureIds((prev) =>
+      prev.includes(feature.id) ? prev : [...prev, feature.id]
+    );
   }, []);
 
   const removeFeature = useCallback((id: string) => {
@@ -77,6 +99,8 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
         features,
         pointClouds,
         selectedPointCloudId,
+        visibleFeatureIds,
+        setVisibleFeatureIds,
         addFeature,
         removeFeature,
         addPointCloud,

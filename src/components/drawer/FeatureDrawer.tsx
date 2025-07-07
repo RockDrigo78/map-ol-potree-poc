@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Checkbox,
 } from "@mui/material";
 import {
   Room as PointIcon,
@@ -33,6 +34,8 @@ interface FeatureDrawerProps {
   onClose: () => void;
   onPointCloudSelect: (cloud: PointCloud) => void;
   onFeatureClick?: (featureId: string) => void;
+  visibleFeatureIds?: string[];
+  onVisibleFeaturesChange?: (ids: string[]) => void;
 }
 
 const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
@@ -40,6 +43,8 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
   onClose,
   onPointCloudSelect,
   onFeatureClick,
+  visibleFeatureIds = [],
+  onVisibleFeaturesChange,
 }) => {
   const { features, pointClouds, removeFeature, removePointCloud } =
     useMapStore();
@@ -52,6 +57,18 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
     id: string;
     name: string;
   } | null>(null);
+
+  // Remove local checked state, use visibleFeatureIds directly
+  const checked = visibleFeatureIds;
+
+  const handleToggle = (id: string) => {
+    if (!onVisibleFeaturesChange) return;
+    if (checked.includes(id)) {
+      onVisibleFeaturesChange(checked.filter((cid) => cid !== id));
+    } else {
+      onVisibleFeaturesChange([...checked, id]);
+    }
+  };
 
   const getFeatureIcon = (type: string) => {
     switch (type) {
@@ -199,53 +216,53 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
             features.
           </Typography>
         ) : (
-          <List dense>
-            {features.map((f) => (
+          <List>
+            {features.map((feature) => (
               <ListItem
-                key={f.id}
+                key={feature.id}
                 sx={{
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  mb: 1,
-                  cursor: "pointer",
-                  "&:hover": { bgcolor: "action.hover" },
+                  background: "#fff",
+                  color: "#000",
+                  gap: 1,
                 }}
-                onClick={() => handleFeatureClick(f.id)}
+                component="button"
+                onClick={() => handleFeatureClick(feature.id)}
+                dense
                 secondaryAction={
                   <IconButton
                     edge="end"
+                    aria-label="delete"
                     onClick={(e) =>
-                      handleDeleteClick(e, "feature", f.id, f.name || f.type)
+                      handleDeleteClick(
+                        e,
+                        "feature",
+                        feature.id,
+                        feature.name || ""
+                      )
                     }
-                    size="small"
-                    color="error"
                   >
                     <DeleteIcon />
                   </IconButton>
                 }
               >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  {getFeatureIcon(f.type)}
+                <ListItemIcon sx={{ alignItems: "center" }}>
+                  <Checkbox
+                    edge="start"
+                    checked={checked.includes(feature.id)}
+                    tabIndex={-1}
+                    disableRipple
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => handleToggle(feature.id)}
+                    inputProps={{
+                      "aria-labelledby": `feature-checkbox-${feature.id}`,
+                    }}
+                  />
+                  {getFeatureIcon(feature.type)}
                 </ListItemIcon>
                 <ListItemText
-                  primary={f.name || f.type}
-                  secondary={
-                    <Box>
-                      <Typography variant="caption" display="block">
-                        Type: {f.type}
-                      </Typography>
-                      {formatMeasurement(f.measurements) && (
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          color="primary"
-                        >
-                          {formatMeasurement(f.measurements)}
-                        </Typography>
-                      )}
-                    </Box>
-                  }
+                  id={`feature-checkbox-${feature.id}`}
+                  primary={feature.name || feature.type}
+                  secondary={formatMeasurement(feature.measurements)}
                 />
               </ListItem>
             ))}
