@@ -1,9 +1,15 @@
 import React from "react";
-import { Box, ToggleButtonGroup, ToggleButton, Tooltip } from "@mui/material";
+import {
+  Box,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tooltip,
+  IconButton,
+} from "@mui/material";
 import {
   Room as PointIcon,
   ShowChart as LineIcon,
-  CropSquare as PolygonIcon,
+  Pentagon as PolygonIcon,
 } from "@mui/icons-material";
 import type { FeatureType } from "../../types/map";
 
@@ -35,6 +41,9 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         borderRadius: 1,
         boxShadow: 3,
         p: 1,
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
       }}
     >
       <ToggleButtonGroup

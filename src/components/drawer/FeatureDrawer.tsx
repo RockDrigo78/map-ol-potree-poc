@@ -20,11 +20,13 @@ import {
 import {
   Room as PointIcon,
   ShowChart as LineIcon,
-  CropSquare as PolygonIcon,
+  Pentagon as PolygonIcon,
   Delete as DeleteIcon,
   Cloud as CloudIcon,
   Clear as ClearIcon,
   Close as CloseIcon,
+  CloudDownload as CloudDownloadIcon,
+  CloudUpload as CloudUploadIcon,
 } from "@mui/icons-material";
 import { useMapStore } from "../../contexts/mapContext";
 import type { PointCloud } from "../../types/map";
@@ -46,7 +48,7 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
   visibleFeatureIds = [],
   onVisibleFeaturesChange,
 }) => {
-  const { features, pointClouds, removeFeature, removePointCloud } =
+  const { features, pointClouds, removeFeature, removePointCloud, addFeature } =
     useMapStore();
 
   // State for confirmation dialogs
@@ -61,6 +63,52 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
   // Remove local checked state, use visibleFeatureIds directly
   const checked = visibleFeatureIds;
 
+  // Select all/none handler
+  const allChecked = features.length > 0 && checked.length === features.length;
+  const someChecked = checked.length > 0 && checked.length < features.length;
+  const handleSelectAll = () => {
+    if (allChecked) {
+      onVisibleFeaturesChange && onVisibleFeaturesChange([]);
+    } else {
+      onVisibleFeaturesChange &&
+        onVisibleFeaturesChange(features.map((f) => f.id));
+    }
+  };
+
+  // Download selected features as GeoJSON
+  const downloadGeoJSON = () => {
+    const selectedFeatures = features.filter((f) => checked.includes(f.id));
+    const geojson = {
+      type: "FeatureCollection",
+      features: selectedFeatures.map((f) => ({
+        type: "Feature",
+        geometry: {
+          type: f.type,
+          coordinates: f.coordinates,
+        },
+        properties: {
+          id: f.id,
+          name: f.name,
+          measurements: f.measurements,
+        },
+      })),
+    };
+    const blob = new Blob([JSON.stringify(geojson, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "features.geojson";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  };
+
+  // Toggle a single feature
   const handleToggle = (id: string) => {
     if (!onVisibleFeaturesChange) return;
     if (checked.includes(id)) {
@@ -141,6 +189,47 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
     setItemToDelete(null);
   };
 
+  // Import GeoJSON handler
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const geojson = JSON.parse(event.target?.result as string);
+        if (
+          geojson.type !== "FeatureCollection" ||
+          !Array.isArray(geojson.features)
+        ) {
+          alert("Invalid GeoJSON: must be a FeatureCollection");
+          return;
+        }
+        geojson.features.forEach((f: any) => {
+          if (!f.geometry || !f.geometry.type || !f.geometry.coordinates)
+            return;
+          const id = f.properties?.id || Date.now().toString() + Math.random();
+          addFeature({
+            id,
+            type: f.geometry.type,
+            coordinates: f.geometry.coordinates,
+            measurements: f.properties?.measurements,
+            name: f.properties?.name || f.geometry.type,
+          });
+        });
+        alert("GeoJSON imported successfully!");
+      } catch (err) {
+        alert("Failed to import GeoJSON: " + (err as Error).message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-imported
+    e.target.value = "";
+  };
+
   return (
     <Drawer
       anchor="left"
@@ -198,6 +287,64 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
         >
           Clear All
         </Button>
+        {/* Import and download/select all controls */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "start",
+            justifyContent: "space-between",
+            gap: 1,
+            mt: 2,
+            mb: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Checkbox
+              indeterminate={someChecked}
+              checked={allChecked}
+              onChange={handleSelectAll}
+              inputProps={{ "aria-label": "Select all features" }}
+            />
+            <Typography variant="body2" sx={{ flex: 1 }}>
+              Select All
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              marginTop: "5px",
+            }}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<CloudDownloadIcon />}
+              onClick={downloadGeoJSON}
+              disabled={checked.length === 0}
+              size="small"
+            >
+              Download GeoJSON
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<CloudUploadIcon />}
+              onClick={handleImportClick}
+              size="small"
+            >
+              Upload GeoJSON
+            </Button>
+          </Box>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".geojson,.json,application/geo+json,application/json"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+        </Box>
       </Box>
 
       <Divider />
@@ -216,7 +363,7 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
             features.
           </Typography>
         ) : (
-          <List>
+          <List sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {features.map((feature) => (
               <ListItem
                 key={feature.id}
