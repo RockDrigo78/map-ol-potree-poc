@@ -13,7 +13,7 @@ import MapView from "./components/map/MapView";
 import FeatureDrawer from "./components/drawer/FeatureDrawer";
 import PointCloudViewer from "./components/3d-viewer/PointCloudViewer";
 import PointCloudUpload from "./components/ui/PointCloudUpload";
-import { useMapStore } from "./store/mapStore";
+import { useMapStore } from "./contexts/mapContext";
 import type { PointCloud } from "./types/map";
 
 function App() {

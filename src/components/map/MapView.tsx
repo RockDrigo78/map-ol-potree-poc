@@ -13,7 +13,7 @@ import LineString from "ol/geom/LineString";
 import Polygon from "ol/geom/Polygon";
 import Icon from "ol/style/Icon";
 import Style from "ol/style/Style";
-import { useMapStore } from "../../store/mapStore";
+import { useMapStore } from "../../contexts/mapContext";
 import type { PointCloud, FeatureType } from "../../types/map";
 import MapToolbar from "./MapToolbar";
 import { Stroke, Fill } from "ol/style";
