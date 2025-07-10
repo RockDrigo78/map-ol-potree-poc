@@ -9,10 +9,10 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import AddIcon from "@mui/icons-material/Add";
-import MapView from "./components/map/MapView";
-import FeatureDrawer from "./components/drawer/FeatureDrawer";
-import PointCloudViewer from "./components/3d-viewer/PointCloudViewer";
-import PointCloudUpload from "./components/ui/PointCloudUpload";
+import MapView from "./components/map/MapView/MapView";
+import FeatureDrawer from "./components/drawer/FeatureDrawer/FeatureDrawer";
+import PointCloudViewer from "./components/3d-viewer/PointCloudViewer/PointCloudViewer";
+import PointCloudUpload from "./components/3d-viewer/PointCloudUpload/PointCloudUpload";
 import { useMapStore } from "./contexts/mapContext";
 import type { PointCloud } from "./types/map";
 

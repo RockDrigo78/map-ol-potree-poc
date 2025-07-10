@@ -1,17 +1,11 @@
 import React from "react";
-import {
-  Box,
-  ToggleButtonGroup,
-  ToggleButton,
-  Tooltip,
-  IconButton,
-} from "@mui/material";
+import { Box, ToggleButtonGroup, ToggleButton, Tooltip } from "@mui/material";
 import {
   Room as PointIcon,
   ShowChart as LineIcon,
   Pentagon as PolygonIcon,
 } from "@mui/icons-material";
-import type { FeatureType } from "../../types/map";
+import type { FeatureType } from "../../../types/map";
 
 interface MapToolbarProps {
   drawingMode: FeatureType | null;

@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
 import { Draw, Modify, Snap } from "ol/interaction";
 import VectorLayer from "ol/layer/Vector";
-import VectorSource from "ol/source/Vector";
 import { fromLonLat, toLonLat } from "ol/proj";
 import { Feature } from "ol";
 import Point from "ol/geom/Point";
@@ -13,49 +12,38 @@ import LineString from "ol/geom/LineString";
 import Polygon from "ol/geom/Polygon";
 import Icon from "ol/style/Icon";
 import Style from "ol/style/Style";
-import { useMapStore } from "../../contexts/mapContext";
-import type { PointCloud, FeatureType } from "../../types/map";
-import MapToolbar from "./MapToolbar";
+import { useMapStore } from "../../../contexts/mapContext";
+import type { FeatureType, PointCloud } from "../../../types/map";
 import { Stroke, Fill } from "ol/style";
 import Circle from "ol/style/Circle";
-import { Box, Tooltip, ToggleButtonGroup, ToggleButton } from "@mui/material";
-import {
-  Add as AddIcon,
-  Remove as RemoveIcon,
-  RotateLeft as RotateLeftIcon,
-  RotateRight as RotateRightIcon,
-} from "@mui/icons-material";
+import type VectorSource from "ol/source/Vector";
+import type { Geometry } from "ol/geom";
 
-interface MapViewProps {
-  onPointCloudClick: (cloud: PointCloud) => void;
-  onMapReady?: (focusOnFeature: (featureId: string) => void) => void;
-  visibleFeatureIds?: string[];
-}
-
-const MapView: React.FC<MapViewProps> = ({
-  onPointCloudClick,
-  onMapReady,
-  visibleFeatureIds,
-}) => {
-  const mapRef = useRef<HTMLDivElement>(null);
+export const useMapView = (
+  mapRef: React.RefObject<HTMLDivElement | null>,
+  mapRef2: React.RefObject<Map | null>,
+  drawRef: React.RefObject<Draw | null>,
+  onMapReady:
+    | ((focusOnFeature: (featureId: string) => void) => void)
+    | undefined,
+  vectorSourceRef: React.RefObject<VectorSource<Feature<Geometry>>>,
+  onPointCloudClick: (cloud: PointCloud) => void,
+  visibleFeatureIds: string[] | undefined
+) => {
   const { features, pointClouds, addFeature, removeFeature, loadFromStorage } =
     useMapStore();
-  const vectorSourceRef = useRef<VectorSource>(new VectorSource());
-  const [drawingMode, setDrawingMode] = useState<FeatureType | null>(null);
-  const mapRef2 = useRef<Map | null>(null);
-  const drawRef = useRef<Draw | null>(null);
-  const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(
-    null
-  );
   const [tooltipContent, setTooltipContent] = useState<string>("");
   const [tooltipPosition, setTooltipPosition] = useState<{
     x: number;
     y: number;
   }>({ x: 0, y: 0 });
   const [showTooltip, setShowTooltip] = useState(false);
-  const tooltipRef = useRef<HTMLDivElement>(null);
   const [mapRotation, setMapRotation] = useState(0);
 
+  const [drawingMode, setDrawingMode] = useState<FeatureType | null>(null);
+  const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(
+    null
+  );
   // Calculate measurements
   const calculateMeasurements = (
     type: FeatureType,
@@ -418,7 +406,7 @@ const MapView: React.FC<MapViewProps> = ({
 
     const handlePointerMove = (evt: any) => {
       const pixel = evt.pixel;
-      const coordinate = evt.coordinate;
+      //   const coordinate = evt.coordinate;
 
       mapRef2.current!.forEachFeatureAtPixel(pixel, (feature) => {
         const id = feature.getId();
@@ -518,149 +506,26 @@ const MapView: React.FC<MapViewProps> = ({
     }
   };
 
-  return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
-      <MapToolbar
-        drawingMode={drawingMode}
-        onDrawingModeChange={setDrawingMode}
-      />
-
-      {/* Custom Zoom Controls */}
-      <ToggleButtonGroup
-        orientation="vertical"
-        sx={{
-          position: "absolute",
-          top: "50%",
-          right: 8,
-          transform: "translateY(-50%)",
-          zIndex: 1000,
-          bgcolor: "background.paper",
-          borderRadius: 1,
-          boxShadow: 3,
-          p: 1,
-          display: "flex",
-        }}
-      >
-        <ToggleButton
-          sx={{
-            width: 32,
-            height: 32,
-            color: "text.primary",
-          }}
-          value="point"
-          onClick={handleZoomIn}
-          size="small"
-        >
-          <AddIcon fontSize="small" />
-        </ToggleButton>
-        <ToggleButton
-          sx={{
-            width: 32,
-            height: 32,
-            color: "text.primary",
-          }}
-          value="point"
-          onClick={handleZoomOut}
-          size="small"
-        >
-          <RemoveIcon fontSize="small" />
-        </ToggleButton>
-      </ToggleButtonGroup>
-
-      {/* Rotation Control Toolbar */}
-      <ToggleButtonGroup
-        sx={{
-          position: "absolute",
-          bottom: 8,
-          left: 8,
-          zIndex: 1000,
-          bgcolor: "background.paper",
-          borderRadius: 1,
-          boxShadow: 3,
-          p: 1,
-          display: "flex",
-        }}
-      >
-        <Tooltip title="Rotate Left">
-          <ToggleButton
-            value="point"
-            onClick={handleRotateLeft}
-            size="small"
-            sx={{
-              width: 32,
-              height: 32,
-              color: "text.primary",
-            }}
-          >
-            <RotateLeftIcon fontSize="small" />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Reset Rotation">
-          <ToggleButton
-            value="point"
-            onClick={handleResetRotation}
-            size="small"
-            sx={{
-              width: 32,
-              height: 32,
-              color: "text.primary",
-            }}
-          >
-            <Box
-              sx={{
-                width: 0,
-                height: 0,
-                borderLeft: "4px solid transparent",
-                borderRight: "4px solid transparent",
-                borderBottom: "12px solid currentColor",
-                transform: `rotate(${-mapRotation}rad)`,
-                transition: "transform 0.3s ease",
-              }}
-            />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Rotate Right">
-          <ToggleButton
-            value="point"
-            onClick={handleRotateRight}
-            size="small"
-            sx={{
-              width: 32,
-              height: 32,
-              color: "text.primary",
-            }}
-          >
-            <RotateRightIcon fontSize="small" />
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
-
-      {/* Tooltip */}
-      {showTooltip && (
-        <Box
-          ref={tooltipRef}
-          sx={{
-            position: "absolute",
-            left: tooltipPosition.x + 10,
-            top: tooltipPosition.y - 10,
-            zIndex: 2000,
-            bgcolor: "rgba(0, 0, 0, 0.8)",
-            color: "white",
-            padding: 1,
-            borderRadius: 1,
-            fontSize: "12px",
-            whiteSpace: "pre-line",
-            maxWidth: 300,
-            boxShadow: 2,
-            pointerEvents: "none",
-          }}
-        >
-          {tooltipContent}
-        </Box>
-      )}
-    </div>
-  );
+  return {
+    calculateMeasurements,
+    focusOnFeature,
+    tooltipContent,
+    setTooltipContent,
+    tooltipPosition,
+    setTooltipPosition,
+    showTooltip,
+    setShowTooltip,
+    selectedFeatureId,
+    setSelectedFeatureId,
+    drawingMode,
+    setDrawingMode,
+    mapRotation,
+    setMapRotation,
+    handleRotateRight,
+    handleRotateLeft,
+    handleResetRotation,
+    handleZoomOut,
+    handleZoomIn,
+    handleClear,
+  };
 };
-
-export default MapView;
