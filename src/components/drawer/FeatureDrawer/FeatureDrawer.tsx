@@ -222,9 +222,12 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
                 onClick={() => handleFeatureClick(feature.id)}
                 dense
                 secondaryAction={
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
+                  <DeleteIcon
+                    sx={{
+                      "&:hover": {
+                        color: "error.main",
+                      },
+                    }}
                     onClick={(e) =>
                       handleDeleteClick(
                         e,
@@ -233,9 +236,7 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
                         feature.name || ""
                       )
                     }
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  />
                 }
               >
                 <ListItemIcon sx={{ alignItems: "center" }}>
@@ -290,14 +291,16 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
                   gap: 1,
                 }}
                 secondaryAction={
-                  <IconButton
-                    edge="end"
+                  <DeleteIcon
+                    sx={{
+                      "&:hover": {
+                        color: "error.main",
+                      },
+                    }}
                     onClick={(e) =>
                       handleDeleteClick(e, "pointCloud", c.id, c.name)
                     }
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  />
                 }
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>
