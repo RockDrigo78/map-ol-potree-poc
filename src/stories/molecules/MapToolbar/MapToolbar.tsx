@@ -26,11 +26,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   return (
     <Box
       sx={{
-        position: "absolute",
-        bottom: 8,
-        right: "50%",
-        transform: "translateX(50%)",
-        zIndex: 1000,
+        width: "fit-content",
         bgcolor: "background.paper",
         borderRadius: 1,
         boxShadow: 3,

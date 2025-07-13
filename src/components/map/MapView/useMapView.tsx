@@ -38,7 +38,7 @@ export const useMapView = (
     y: number;
   }>({ x: 0, y: 0 });
   const [showTooltip, setShowTooltip] = useState(false);
-  const [mapRotation, setMapRotation] = useState(0);
+  const [mapRotationInRad, setMapRotationInRad] = useState(0);
 
   const [drawingMode, setDrawingMode] = useState<FeatureType | null>(null);
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(
@@ -487,6 +487,7 @@ export const useMapView = (
     if (mapRef2.current) {
       const view = mapRef2.current.getView();
       view.animate({ rotation: 0, duration: 500 });
+      setMapRotationInRad(0);
     }
   };
 
@@ -495,6 +496,7 @@ export const useMapView = (
       const view = mapRef2.current.getView();
       const currentRotation = view.getRotation() || 0;
       view.animate({ rotation: currentRotation - Math.PI / 4, duration: 300 });
+      setMapRotationInRad(currentRotation - Math.PI / 4);
     }
   };
 
@@ -503,6 +505,7 @@ export const useMapView = (
       const view = mapRef2.current.getView();
       const currentRotation = view.getRotation() || 0;
       view.animate({ rotation: currentRotation + Math.PI / 4, duration: 300 });
+      setMapRotationInRad(currentRotation + Math.PI / 4);
     }
   };
 
@@ -519,8 +522,8 @@ export const useMapView = (
     setSelectedFeatureId,
     drawingMode,
     setDrawingMode,
-    mapRotation,
-    setMapRotation,
+    mapRotationInRad,
+    setMapRotationInRad,
     handleRotateRight,
     handleRotateLeft,
     handleResetRotation,

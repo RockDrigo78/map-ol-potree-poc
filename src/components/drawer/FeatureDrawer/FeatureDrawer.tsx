@@ -77,14 +77,7 @@ const FeatureDrawer: React.FC<FeatureDrawerProps> = ({
   );
 
   return (
-    <Drawer
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: { width: 350 },
-      }}
-    >
+    <Drawer anchor="left" open={open} onClose={onClose}>
       <Box sx={{ p: 2, pb: 1 }}>
         <Box
           sx={{
